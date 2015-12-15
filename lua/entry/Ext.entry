@@ -1,7 +1,0 @@
-modEntry = [[
-Client: lua/Ext_Client.lua,
-Server: lua/Ext_Server.lua,
-Predict: lua/Ext_Predict.lua,
-Shared: lua/Ext_Shared.lua,
-Priority: 5
-]]

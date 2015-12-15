@@ -1,0 +1,7 @@
+modEntry = [[
+Client: lua/AssaultClient.lua,
+Server: lua/AssaultServer.lua,
+Predict: lua/AssaultPredict.lua,
+Shared: lua/AssaultShared.lua,
+Priority: 5
+]]
