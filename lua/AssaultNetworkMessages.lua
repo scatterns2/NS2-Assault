@@ -118,3 +118,14 @@ if Client then
 
 	Client.HookNetworkMessage("TechPoints", OnCommandTechPoints)
 end	
+
+
+local kGorgeBuildStructureMessage = 
+{
+    origin = "vector",
+    direction = "vector",
+    structureIndex = "integer (1 to 9)",
+    lastClickedPosition = "vector"
+}
+
+Shared.RegisterNetworkMessage("GorgeBuildStructure", kGorgeBuildStructureMessage)

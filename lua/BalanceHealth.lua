@@ -66,13 +66,13 @@ kPrototypeLabHealth = 3000    kPrototypeLabArmor = 500    kPrototypeLabPointValu
 kInfantryPortalHealth = 1525    kInfantryPortalArmor = 500    kInfantryPortalPointValue = 10
 kArmsLabHealth = 1650    kArmsLabArmor = 500    kArmsLabPointValue = 15
 kSentryBatteryHealth = 600    kSentryBatteryArmor = 200    kSentryBatteryPointValue = 2
-kMainCommandStationHealth = 8000    kMainCommandStationArmor = 1000   
+kMainCommandStationHealth = 8000    kMainCommandStationArmor = 2000   
 
 // 5000/1000 is good average (is like 7,000 health from NS1)
 kHiveHealth = 2000    kHiveArmor = 500    kHivePointValue = 25
 kMatureHiveHealth = 2000 kMatureHiveArmor = 500
     
-kCragHiveHealth = 8000    kCragHiveArmor = 1000    kHivePointValue = 25
+kCragHiveHealth = 8000    kCragHiveArmor = 2000    kHivePointValue = 25
 kMatureCragHiveHealth = 8000 kMatureCragHiveArmor = 1000
     
 kDrifterHealth = 300    kDrifterArmor = 20    kDrifterPointValue = 2

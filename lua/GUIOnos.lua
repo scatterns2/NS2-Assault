@@ -97,7 +97,7 @@ function GUIOnos:Update(deltaTime)
 	local player = Client.GetLocalPlayer()
 	
     if player and player.GetOnosCompletion then
-        self:SetFuel(player:GetOnosCompletion())
+        self:SetFuel(0.5)
     end
     
 

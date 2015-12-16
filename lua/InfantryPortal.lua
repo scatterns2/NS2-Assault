@@ -376,15 +376,24 @@ end
 local function SpawnPlayer(self)
 
     if self.queuedPlayerId ~= Entity.invalidId then
-    
-        local queuedPlayer = Shared.GetEntity(self.queuedPlayerId)
+		
+	    local queuedPlayer = Shared.GetEntity(self.queuedPlayerId)
         local team = queuedPlayer:GetTeam()
         
         // Spawn player on top of IP
         local spawnOrigin = self:GetAttachPointOrigin("spawn_point")
         
         local success, player = team:ReplaceRespawnPlayer(queuedPlayer, spawnOrigin, queuedPlayer:GetAngles())
-        if success then
+        local upgradesGiven = 0
+		for index, upgradeId in ipairs(self.marineUpgrades) do
+
+			if player:GiveUpgrade(upgradeId) then
+				upgradesGiven = upgradesGiven + 1
+			end
+                
+		end
+		
+		if success then
         
             player:SetCameraDistance(0)
             
@@ -631,5 +640,82 @@ end
 function InfantryPortal:GetHealthbarOffset()
     return 0.5
 end 
+
+
+
+function InfantryPortal:SetSpawnData(techIds, previousTechId, healthScalar, armorScalar)
+
+    // Save upgrades so they can be given when spawned
+    self.marineUpgrades = {}
+    table.copy(techIds, self.marineUpgrades)
+
+    self.gestationClass = nil
+    
+    for i, techId in ipairs(techIds) do
+        self.gestationClass = LookupTechData(techId, kTechDataGestateName)
+        if self.gestationClass then 
+            // Remove gestation tech id from "upgrades"
+            self.gestationTypeTechId = techId
+            //table.removevalue(self.evolvingUpgrades, self.gestationTypeTechId)
+            break 
+        end
+    end
+    
+    // Upgrades don't have a gestate name, we want to gestate back into the
+    // current alien type, previousTechId.
+    if not self.gestationClass then
+        self.gestationTypeTechId = previousTechId
+        self.gestationClass = LookupTechData(previousTechId, kTechDataGestateName)
+    end
+    self.gestationStartTime = Shared.GetTime()
+    
+    local lifeformTime = ConditionalValue(self.gestationTypeTechId ~= previousTechId, self:GetGestationTime(self.gestationTypeTechId), 0)
+    
+    local newUpgradesAmount = 0
+    local replacementUpgrades = { }
+    local currentUpgrades = self:GetUpgrades()
+    local gameInfo = GetGameInfoEntity()
+    
+    for _, upgradeId in ipairs(self.evolvingUpgrades) do
+    
+        if not table.contains(currentUpgrades, upgradeId) then
+            newUpgradesAmount = newUpgradesAmount + 1
+        end
+        local currentChamberId = GetChamberTypeForUpgrade(upgradeId)
+        for _, cId in ipairs(currentUpgrades) do
+            if GetChamberTypeForUpgrade(cId) == currentChamberId and not table.contains(self.evolvingUpgrades, cId) and not table.contains(replacementUpgrades, cId) then
+                table.insert(replacementUpgrades, cId)
+            end
+        end
+        
+    end
+    
+    self.gestationTime = ConditionalValue(Shared.GetDevMode(), 2, lifeformTime + (newUpgradesAmount * kUpgradeGestationTime) + (#replacementUpgrades * kReplaceUpgradeGestationTime))
+    
+    if Embryo.gFastEvolveCheat then
+        self.gestationTime = 5
+    end
+    
+    if gameInfo and gameInfo:GetGameMode() == kGameMode.Combat then
+        self.gestationTime = self.gestationTime * kCombatModeGestationTimeScalar
+    end
+    
+    self.evolveTime = 0
+    self.maxHealth = kEmbryoHealth
+	self:SetHealth(self.maxHealth * healthScalar)
+    self.maxArmor = kEmbryoArmor
+	self:SetArmor(self.maxArmor * armorScalar)
+    // Use this amount of health when we're done evolving
+    self.healthScalar = healthScalar
+    self.armorScalar = armorScalar
+    
+    self:ClearUpgrades()
+    
+    // Give upgrades right away, then again after complete.  This ensures nothing is lost in 'combat' mode.
+    for index, upgradeId in ipairs(self.evolvingUpgrades) do
+        self:GiveUpgrade(upgradeId)
+    end
+    
+end
 
 Shared.LinkClassToMap("InfantryPortal", InfantryPortal.kMapName, networkVars, true)

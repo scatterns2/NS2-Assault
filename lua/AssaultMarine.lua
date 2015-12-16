@@ -2,9 +2,14 @@
 Script.Load("lua/Marine.lua")
 Script.Load("lua/Weapons/Marine/MarineStructureAbility.lua")
 
+origMarineOnInit = Marine.OnInitialized
+function Marine:OnInitialized()
 
+	origMarineOnInit(self)
+	//self:InitTechTree()
+    
+end
 
-	
 
 function Marine:InitWeapons()
 
@@ -32,6 +37,113 @@ function Marine:OverrideInput(input)
 	
 	return Player.OverrideInput(self, input)
         
+end
+
+function Marine:ProcessBuyAction(techIds)
+
+    ASSERT(type(techIds) == "table")
+    ASSERT(table.count(techIds) > 0)
+    
+    local techTree = self:GetTechTree()
+    local buyAllowed = true
+    local totalCost = 0
+    local validBuyIds = { }
+    
+    for i, techId in ipairs(techIds) do
+    
+        local techNode = techTree:GetTechNode(techId)
+        if(techNode ~= nil and techNode.available) and not self:GetHasUpgrade(techId) then
+			Print("%s", techNode.available)
+            local cost = GetCostForTech(techId)
+            if cost ~= nil then
+                totalCost = totalCost + cost
+                table.insert(validBuyIds, techId)
+				Print("%s", validBuyIds)
+            end
+        
+        else
+        
+            buyAllowed = false
+            break
+        
+        end
+        
+    end
+    
+    if totalCost <= self:GetResources() then
+    
+        if self:AttemptToBuy(validBuyIds) then
+		    local techNode = techTree:GetTechNode(validBuyIds[1])
+            techNode:SetResearched(true)
+            techNode:SetHasTech(true)
+            techTree:SetTechNodeChanged(techNode)
+            techTree:SetTechChanged() 
+            //self:UpdateTechTree()
+			self:AddResources(-totalCost)
+            return true
+        end
+        
+    else
+        Print("not enough resources sound server")
+        Server.PlayPrivateSound(self, self:GetNotEnoughResourcesSound(), self, 1.0, Vector(0, 0, 0))        
+    end
+
+    return false
+    
+end
+
+function Marine:AttemptToBuy(techIds)
+
+    local techId = techIds[1]
+	Print("%s", techId)
+	if techId == kTechId.Armor1 or techId == kTechId.Armor2 or techId == kTechId.Armor3 or techId == kTechId.Weapons1 or techId == kTechId.Weapons2 or techId == kTechId.Weapons3 then
+		return true
+	end
+    local hostStructure = GetHostStructureFor(self, techId)
+
+    if hostStructure then
+    
+        local mapName = LookupTechData(techId, kTechDataMapName)
+        
+        if mapName then
+		Print("%s", mapName)
+
+            Shared.PlayPrivateSound(self, Marine.kSpendResourcesSoundName, nil, 1.0, self:GetOrigin())
+            
+            if self:GetTeam() and self:GetTeam().OnBought then
+                self:GetTeam():OnBought(techId)
+            end
+            
+			
+			
+            if techId == kTechId.Jetpack then
+
+                // Need to apply this here since we change the class.
+                self:AddResources(-GetCostForTech(techId))
+                self:GiveJetpack()
+                
+            elseif kIsExoTechId[techId] then
+                BuyExo(self, techId)    
+            else
+            
+                // Make sure we're ready to deploy new weapon so we switch to it properly.
+                if self:GiveItem(mapName) then
+                
+                    StartSoundEffectAtOrigin(Marine.kGunPickupSound, self:GetOrigin())                    
+                    return true
+                    
+                end
+                
+            end
+            
+            return false
+            
+        end
+        
+    end
+    
+    return false
+    
 end
 
 local orig_Marine_UpdateGhostModel = MarineUpdateGhostModel
@@ -127,6 +239,24 @@ if Client then
 
 end
 
+function Marine:GetExoCompletion()
 
+	for i, teaminfo in ipairs ( GetEntitiesForTeam("TeamInfo", kMarineTeamType) ) do
+		marineRes = teaminfo:GetTeamResources() / 200
+	end
+			
+	return marineRes
+	
+end
+	
+function Marine:GetOnosCompletion()
+
+	for i, teaminfo in ipairs ( GetEntitiesForTeam("TeamInfo", kAlienTeamType) ) do
+		alienRes = teaminfo:GetTeamResources() / 200
+	end
+			
+	return alienRes
+	
+end
 
 

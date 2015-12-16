@@ -95,7 +95,7 @@ function GUIExo:Update(deltaTime)
 	local player = Client.GetLocalPlayer()
 
     if player and player.GetExoCompletion then
-        self:SetFuel(player:GetExoCompletion())
+        self:SetFuel(0.5)
     end
     
 
